@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendario OCAS de Integridad de Datos — Febrero 2026</title>
+
+  <!-- Estilos (plantilla con imagen de fondo) -->
+  <style>
+    :root{
+      --bg: #d9f0ff; /* color base */
+      --card: #ffffff;
+      --shadow: rgba(0,0,0,.12);
+      --amarillo: #ffd900;
+      --azul-oscuro:#1B4298;
+      --rosa:#E20177;
+      --verde:#54B948;
+      --azul:#009DDC; /* días inhábiles visuales */
+      --radius: 10px;
+    }
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; margin:0; }
+
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      /* Fondo por capas: velo blanco + imagen + color base */
+      background:
+        linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)),
+        url('https://support.organon.com/4ae241f293223a508582366badba1080.iix') center / cover no-repeat fixed,
+        var(--bg);
+      color:#222;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:24px 16px 64px;
+      overflow-x:hidden;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:1100px;
+      position:relative;
+    }
+
+    /* Título multicolor */
+    h1{
+      margin:0 0 12px;
+      text-align:center;
+      font-size: clamp(1.4rem, 2.2vw, 2rem);
+      line-height:1.25;
+      font-weight:700;
+    }
+    .color-title span:nth-child(1){ color: #1B4298; }
+    .color-title span:nth-child(2){ color: #E20177; }
+    .color-title span:nth-child(3){ color: #54B948; }
+    .color-title span:nth-child(4){ color: #009DDC; }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 12px;
+      align-items:center;
+      justify-content:center;
+      margin: 8px 0 16px;
+    }
+    .controls label{ font-size:0.95rem; }
+    .controls select{
+      background:#fff;
+      border:1px solid #cfcfcf;
+      border-radius:6px;
+      padding:8px 10px;
+      box-shadow:0 2px 6px var(--shadow);
+      min-width:140px;
+    }
+
+    .acciones{ text-align:center; margin-bottom:12px; }
+    button{
+      background:#fff;
+      border:1px solid #cfcfcf;
+      border-radius:6px;
+      padding:10px 16px;
+      cursor:pointer;
+      margin:4px 6px;
+      box-shadow:0 2px 6px var(--shadow);
+    }
+    button:hover{ filter:brightness(0.97); }
+
+    /* Calendario */
+    .cal-container{
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 6px 18px var(--shadow);
+      padding:12px;
+      position:relative;
+      overflow:hidden;
+    }
+    table{
+      width:100%;
+      border-collapse:separate; /* permite "gaps" con border-spacing */
+      border-spacing:8px;       /* espacio entre tarjetas */
+    }
+    thead th{
+      background: var(--amarillo);
+      color:#111;
+      text-align:center;
+      padding:10px 8px;
+      border-radius: 8px;
+      position:sticky;
+      top:0;
+      z-index:2;
+      box-shadow:0 1px 0 rgba(0,0,0,.05) inset;
+    }
+    tbody td{
+      height:140px;
+      vertical-align:top;
+      background:#f7f7f7;
+      border-radius: 8px;
+      padding:8px 10px;
+      text-align:left;
+      box-shadow: 0 2px 6px var(--shadow);
+      overflow:hidden;
+    }
+    /* Día y texto */
+    .day{
+      font-weight:700;
+      font-size: 12px;
+      opacity:.95;
+      margin-bottom:4px;
+    }
+    .txt{
+      font-size: 12px;
+      line-height:1.25rem;
+      text-align: left;
+      white-space: pre-line;
+    }
+    /* Paleta por tarjeta (para días con texto) */
+    .color-azul-oscuro{ background: var(--azul-oscuro); color:#fff; }
+    .color-rosa { background: var(--rosa); color:#fff; }
+    .color-verde { background: var(--verde); color:#fff; }
+    .color-azul { background: var(--azul); color:#fff; } /* inhábiles visuales */
+
+    /* Logo esquina inferior derecha (botón) */
+    .logo-link{
+      position:fixed;
+      right:12px;
+      bottom:12px;
+      z-index:1000;
+    }
+    .logo{
+      width:90px;
+      height:auto;
+      border-radius:50%;
+      box-shadow:0 4px 10px var(--shadow);
+      background:#fff;
+      display:block;
+    }
+
+    /* Impresión */
+    @media print{
+      body{ background:#fff !important; }
+      .logo-link{ display:none !important; }
+      .wrap{ max-width:100%; }
+      table{ border-spacing:6px; }
+      thead th{ position:static !important; }
+      .controls, .acciones { display:none !important; }
+    }
+    @media (max-width:720px){
+      tbody td{ height:120px; }
+    }
+  </style>
+
+  <!-- Librerías necesarias -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+          integrity="sha512-BNa5n8m0kqgJTh9kY5kW9v0nXnCavz5GgWn0yH8n0a6aGf2d+g3cS9u0m3uWqvU0O8ZlVv3dO9YkT4N2o8S9JQ=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+          integrity="sha512-Rtq8j2xqjH0b0wY3t9fYqA3dK5HkN7m3l8q1x0A4mL7mP3j2sQmJx7uJQn2o8Qe5Cj1HfN9Q3D7QjV3Xk0f3WQ=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+  <div class="wrap">
+    <h1 id="titulo" class="color-title">
+      <span>Calendario</span> <span>OCAS</span> <span>de Integridad de Datos</span> <span>de Febrero 2026</span>
+    </h1>
+
+    <!-- Selectores Mes/Año -->
+    <div class="controls">
+      <label for="selMes">Mes:</label>
+      <select id="selMes" aria-label="Seleccionar mes"></select>
+      <label for="selAnio">Año:</label>
+      <select id="selAnio" aria-label="Seleccionar año"></select>
+    </div>
+
+    <div class="acciones">
+      <button onclick="descargarPDF()">Descargar PDF</button>
+      <button onclick="window.print()">Imprimir</button>
+    </div>
+
+    <!-- Calendario -->
+    <div id="contenedor-cal" class="cal-container">
+      <table id="calendario" aria-label="Calendario Febrero 2026">
+        <thead>
+          <tr>
+            <th>Dom</th>
+            <th>Lun</th>
+            <th>Mar</th>
+            <th>Mié</th>
+            <th>Jue</th>
+            <th>Vie</th>
+            <th>Sáb</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-cal"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Logo + enlace (esquina inferior derecha) -->
+  <a class="logo-link"
+     href="https://forms.office.com/Pages/ResponsePage.aspx?id=0XBKSK_KA0qkdxy-aIMEr_NwbkFAA9FPm473U1oWsjFURTRaUlZOS0RNWk43UjMzNzNHSzRRTkROWC4u"
+     target="_blank" rel="noopener">
+    <img
+      class="logo"
+      src="https://organoncloud.sharepoint.com/:i:/r/sites/DI_Xochimilco/Shared%20Documents/Logo%20DI%202025.png?csf=1&web=1&e=3XmH4V"
+      alt="Logo DI 2025 — Ir al formulario" />
+  </a>
+  <!-- Fallback local (si la imagen de SharePoint no carga):
+  <a class="logo-link"
+     href="https://forms.office.com/Pages/ResponsePage.aspx?id=0XBKSK_KA0qkdxy-aIMEr_NwbkFAA9FPm473U1oWsjFURTRaUlZOS0RNWk43UjMzNzNHSzRRTkROWC4u"
+     target="_blank" rel="noopener">
+    <img class="logo" src="Logo DI 2025.png" alt="Logo DI 2025 — Ir al formulario" />
+  </a>
+  -->
+
+  <script>
+  /************** CONFIGURACIÓN **************/
+  const mesesES = [
+    'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+  ];
+  // Inicial por defecto (Febrero 2026)
+  let MES = 1; // 0=Ene ... 1=Feb
+  let ANIO = 2026;
+
+  // Mapeo de eventos por mes: { 'YYYY-MM' : { dia: {color, texto} } }
+  // Colores válidos: 'color-azul' (#009DDC), 'color-rosa', 'color-verde', 'color-azul-oscuro'
+  const eventosPorMes = {
+    '2026-02': {
+      /* 19 hallazgos (laborables), iniciando #1 el 03/feb y siguiendo en orden */
+      3:  { color: 'color-azul-oscuro', texto: 'BPDoc en registros de mantenimiento en línea' },
+      4:  { color: 'color-rosa',        texto: 'Manejo de materiales impresos en empaque' },
+      5:  { color: 'color-verde',       texto: 'Impresión de registros de acondicionamiento' },
+      6:  { color: 'color-azul-oscuro', texto: 'Audit Trail del sistema de visión Systech' },
+      9:  { color: 'color-rosa',        texto: 'Impresión de etiquetas de calibración sin uso' },
+      10: { color: 'color-verde',       texto: 'Correcciones a formato aprobado para muestreo de materia prima' },
+      11: { color: 'color-azul-oscuro', texto: 'Falta de evidencia en cálculos' },
+      12: { color: 'color-rosa',        texto: 'Ausencia de acabado sanitario en áreas de manufactura UNDRA' },
+      13: { color: 'color-verde',       texto: 'Falta de segregación y control de llave de contenedor de documentos GMP' },
+      16: { color: 'color-azul-oscuro', texto: 'Procedimiento no define limpieza del electrodo ni su frecuencia' },
+      17: { color: 'color-rosa',        texto: 'Registro de calibración en bitácora que no corresponde al equipo' },
+      18: { color: 'color-verde',       texto: 'Incumplimiento de BPD y ALCOA en bitácoras' },
+      19: { color: 'color-azul-oscuro', texto: 'Almacenamiento de productos diferentes en la misma área' },
+      20: { color: 'color-rosa',        texto: 'Omisión en generación de RECUFE por alarma de presión diferencial' },
+      23: { color: 'color-verde',       texto: 'Desalineación de la matriz de especificaciones ambientales' },
+      24: { color: 'color-azul-oscuro', texto: 'Deficiencias en BPDoc en llenado de RECUFEs' },
+      25: { color: 'color-rosa',        texto: 'Etiquetas indebidas de condiciones de almacenamiento de graneles' },
+      26: { color: 'color-verde',       texto: 'Falta de claridad en la frecuencia de limpieza entre secciones del cuarto' },
+      27: { color: 'color-azul-oscuro', texto: 'No se definen elementos a revisar en herramental para validar su estado' }
+    }
+  };
+
+  // Días inhábiles (azul #009DDC), sin texto:
+  // 1, 2, 7, 8, 14, 15, 21, 22 y 28
+  const diasAzulesSinTexto = {
+    '2026-02': [1, 2, 7, 8, 14, 15, 21, 22, 28]
+  };
+
+  /************** UI Selectores **************/
+  const selMes = document.getElementById('selMes');
+  const selAnio = document.getElementById('selAnio');
+  const titulo = document.getElementById('titulo');
+
+  function poblarSelectores(){
+    // Meses
+    selMes.innerHTML = mesesES.map((m, i) =>
+      `<option value="${i}">${m}</option>`).join('');
+    // Años (ajusta el rango si necesitas más)
+    const anios = [2024, 2025, 2026, 2027];
+    selAnio.innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join('');
+    selMes.value = MES;
+    selAnio.value = ANIO;
+
+    selMes.addEventListener('change', () => {
+      MES = parseInt(selMes.value, 10);
+      actualizarTodo();
+    });
+    selAnio.addEventListener('change', () => {
+      ANIO = parseInt(selAnio.value, 10);
+      actualizarTodo();
+    });
+  }
+
+  /************** Construcción del calendario **************/
+  function construirCalendario(mes, anio){
+    const tbody = document.getElementById('cuerpo-cal');
+    tbody.innerHTML = '';
+
+    const primerDiaSemana = new Date(anio, mes, 1).getDay(); // 0=Dom..6=Sáb
+    const diasMes = new Date(anio, mes + 1, 0).getDate(); // último día del mes
+
+    let fila = document.createElement('tr');
+    // Celdas vacías antes del día 1
+    for (let i = 0; i < primerDiaSemana; i++){
+      const td = document.createElement('td');
+      fila.appendChild(td);
+    }
+
+    const claveMes = `${anio}-${String(mes+1).padStart(2,'0')}`;
+    const eventos = eventosPorMes[claveMes] || {};
+    const azulesSin = new Set(diasAzulesSinTexto[claveMes] || []);
+
+    for (let dia = 1; dia <= diasMes; dia++){
+      if ((primerDiaSemana + (dia - 1)) % 7 === 0 && (primerDiaSemana + (dia - 1)) !== 0){
+        tbody.appendChild(fila);
+        fila = document.createElement('tr');
+      }
+
+      const td = document.createElement('td');
+
+      // Cabecera del día
+      const head = document.createElement('div');
+      head.className = 'day';
+      head.textContent = dia;
+
+      const body = document.createElement('div');
+      body.className = 'txt';
+
+      if (azulesSin.has(dia)){
+        // Días inhábiles (azul), sin texto
+        td.classList.add('color-azul');
+        body.textContent = '';
+      } else if (eventos[dia]){
+        // Días con evento/texto
+        td.classList.add(eventos[dia].color);
+        body.textContent = eventos[dia].texto;
+      } else {
+        // Día sin evento (neutro)
+        body.textContent = '';
+      }
+
+      td.appendChild(head);
+      td.appendChild(body);
+      fila.appendChild(td);
+    }
+
+    // Completar la última fila con celdas vacías
+    while (fila.children.length < 7){
+      const td = document.createElement('td');
+      fila.appendChild(td);
+    }
+    tbody.appendChild(fila);
+  }
+
+  function actualizarTitulo(){
+    const mesNombre = mesesES[MES];
+    titulo.innerHTML = `
+      <span>Calendario</span> <span>OCAS</span> <span>de Integridad de Datos</span> <span>de ${mesNombre} ${ANIO}</span>
+    `;
+  }
+
+  function actualizarTodo(){
+    actualizarTitulo();
+    construirCalendario(MES, ANIO);
+  }
+
+  // Inicializar UI y calendario
+  poblarSelectores();
+  actualizarTodo();
+
+  /************** PDF **************/
+  async function descargarPDF(){
+    const { jsPDF } = window.jspdf;
+    const nodo = document.getElementById('calendario');
+    const canvas = await html2canvas(nodo, { scale: 2, backgroundColor:'#ffffff' });
+    const imgData = canvas.toDataURL('image/png');
+
+    const pdf = new jsPDF('landscape', 'pt', 'a4');
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+
+    const tmp = new Image();
+    tmp.src = imgData;
+    await new Promise(r => tmp.onload = r);
+
+    const ratio = Math.min((pdfW - 40) / tmp.width, (pdfH - 40) / tmp.height);
+    const w = tmp.width * ratio, h = tmp.height * ratio;
+    const x = (pdfW - w) / 2, y = (pdfH - h) / 2;
+
+    const nombre = `Calendario_${mesesES[MES]}_${ANIO}.pdf`;
+    pdf.addImage(imgData, 'PNG', x, y, w, h);
+    pdf.save(nombre);
+  }
+  window.descargarPDF = descargarPDF;
+  </script>
+</body>
+</html>
